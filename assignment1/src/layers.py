@@ -65,6 +65,11 @@ class Linear(Layer):
             out: (batch_size, out_features)
         """
         # TODO: compute the affine transformation and store x in self.cache
+        z = x @ self.W.T + self.b
+        self.cache = x
+        return z
+
+#we assigned x to self.cache because in backward process we use the input x and output grad_out(upstream gradient) to find the updates values for paramaters.
         raise NotImplementedError("Linear.forward")
 
     def backward(self, grad_out: torch.Tensor) -> torch.Tensor:
@@ -76,6 +81,8 @@ class Linear(Layer):
         Returns:
             grad_x:   (batch_size, in_features)   — gradient of loss w.r.t. input
 
+            *grad_out is the upstream gradient
+            *grad_x is the local gradient
         Side effects:
             Sets self.dW and self.db (averaged over the batch).
         """
@@ -85,6 +92,10 @@ class Linear(Layer):
         #   grad_x  = grad_out @ W
         #   dW      = grad_out.T @ x   (then average over batch: / batch_size)
         #   db      = grad_out.mean(dim=0)
+        grad_x = grad_out @ self.W
+        self.dW = grad_out.T @ self.cache / grad_out.shape[0]
+        self.db = grad_out.mean(dim=0)
+        return grad_x
         raise NotImplementedError("Linear.backward")
 
 
@@ -105,6 +116,9 @@ class ReLU(Layer):
             out: (batch_size, features)
         """
         # TODO: apply ReLU and store the mask needed for backward in self.cache
+        activate = torch.maximum(torch.zeros_like(x), x)
+        self.cache=activate
+        return activate
         raise NotImplementedError("ReLU.forward")
 
     def backward(self, grad_out: torch.Tensor) -> torch.Tensor:
@@ -115,6 +129,12 @@ class ReLU(Layer):
             grad_x:   (batch_size, features)
         """
         # TODO: gradient is 1 where x > 0, else 0
+        if self.cache > 0:
+            grad_x = 1
+        else:
+            grad_x = 0
+        return grad_x
+        
         raise NotImplementedError("ReLU.backward")
 
 
@@ -132,6 +152,9 @@ class Sigmoid(Layer):
             out: (batch_size, features)
         """
         # TODO: compute sigmoid and cache the output (needed for backward)
+        sigmoid=1 / (1 + torch.exp(-x))
+        self.cache=sigmoid
+        return sigmoid
         raise NotImplementedError("Sigmoid.forward")
 
     def backward(self, grad_out: torch.Tensor) -> torch.Tensor:
