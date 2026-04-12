@@ -94,7 +94,8 @@ class Linear(Layer):
         #   db      = grad_out.mean(dim=0)
         grad_x = grad_out @ self.W
         dW = (torch.transpose(grad_out, 0, 1) @ self.cache)
-        #dW = torch.div(w, grad_out.shape[0]) #average over batch size
+        #dW = torch.div(w, grad_out.shape[0]) #average over batch size 
+        #come back again
         db = grad_out.sum(dim=0)
         self.dW = dW 
         self.db = db 
@@ -249,17 +250,20 @@ class CrossEntropyLoss:
             5. Cache whatever you need for backward.
         """
         # TODO
-        max_tensor=torch.max(logits, dim=1, keepdim=True).values #find the max value for each row and keep the dimensions for broadcasting
+        max_tensor=torch.max(logits, dim=1, keepdim=True).values 
         stabilized_logits=torch.sub(logits,max_tensor)
         softmax= torch.exp(stabilized_logits) / torch.exp(stabilized_logits).sum(dim=1, keepdim=True)
+
         one_hot= torch.zeros_like(softmax) #assigning 0 to initialize a one_hot tensor sized as softmax
         for i in range(softmax.shape[0]): #for the batch size
             index=labels[i] #check the value of the label index
             one_hot[i][index]=1 #assign 1 to that index in the one_hot tensor, 0 is assigned for the other indices in the initialization 
+
 #this way we create a tensor that has the value 1 in the correct label and 0 otherwise
 #when we multiply it with the softmax tensor, the 0's will cancel the unrelated probabilities
         true_prob=(softmax * one_hot) 
-        negative_log=torch.neg(torch.log(true_prob.sum(dim=1))) #we sum over the classes to get the probability of the true class for each sample, then we take the log and negate it to get the negative log-likelihood
+        #we sum the true_prob tensor to get a scalar value so that we can apply log
+        negative_log=torch.neg(torch.log(true_prob.sum(dim=1)))
         NLL=negative_log.mean() 
         self.cache=(softmax, one_hot) 
         return NLL
