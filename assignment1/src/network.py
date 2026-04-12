@@ -62,6 +62,9 @@ class FFNN:
         # Hint: iterate over hidden_sizes, adding a Linear then an activation
         # for each hidden layer. Then add the final Linear output layer.
         self.layers = []
+        self.layers.append(Linear(input_dim, hidden_sizes[0])) #input layer
+        for i in range(hidden_sizes[1]!=num_classes):
+            
         raise NotImplementedError("FFNN.__init__")
 
     # ------------------------------------------------------------------
