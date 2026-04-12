@@ -93,8 +93,11 @@ class Linear(Layer):
         #   dW      = grad_out.T @ x   (then average over batch: / batch_size)
         #   db      = grad_out.mean(dim=0)
         grad_x = grad_out @ self.W
-        self.dW = grad_out.T @ self.cache / grad_out.shape[0]
-        self.db = grad_out.mean(dim=0)
+        dW = (torch.transpose(grad_out, 0, 1) @ self.cache)
+        #dW = torch.div(w, grad_out.shape[0]) #average over batch size
+        db = grad_out.sum(dim=0)
+        self.dW = dW 
+        self.db = db 
         return grad_x
         raise NotImplementedError("Linear.backward")
 
@@ -117,7 +120,7 @@ class ReLU(Layer):
         """
         # TODO: apply ReLU and store the mask needed for backward in self.cache
         activate = torch.maximum(torch.zeros_like(x), x)
-        self.cache=activate #the tensor of the results, relu applied to the input
+        self.cache=x 
         return activate
         raise NotImplementedError("ReLU.forward")
 
@@ -129,12 +132,12 @@ class ReLU(Layer):
             grad_x:   (batch_size, features)
         """
         # TODO: gradient is 1 where x > 0, else 0
-        #bad algorithm
+        #bad algorithm come back with a better one
         grad_x = torch.zeros_like(self.cache)
         for i in range(self.cache.shape[0]):
             for j in range(self.cache.shape[1]):
                 if self.cache[i][j] > 0:
-                    grad_x[i][j] = 1
+                    grad_x[i][j] = grad_out[i][j]
                 else:
                     grad_x[i][j] = 0
         return grad_x
@@ -156,7 +159,7 @@ class Sigmoid(Layer):
             out: (batch_size, features)
         """
         # TODO: compute sigmoid and cache the output (needed for backward)
-        sigmoid=1 / (1 + torch.exp(-x))
+        sigmoid=1 / (1 + torch.exp(torch.neg(x)))
         self.cache=sigmoid
         return sigmoid
         raise NotImplementedError("Sigmoid.forward")
@@ -169,7 +172,9 @@ class Sigmoid(Layer):
             grad_x:   (batch_size, features)
         """
         # TODO: use the cached sigmoid output to compute the gradient
-        grad_x = grad_out *(1 - grad_out)
+        torch_of_1s=torch.ones_like(self.cache)
+        d_sigmoid = self.cache *(torch.sub(torch_of_1s,self.cache))
+        grad_x=grad_out * d_sigmoid
         return grad_x
         raise NotImplementedError("Sigmoid.backward")
 
@@ -201,7 +206,9 @@ class Tanh(Layer):
             grad_x:   (batch_size, features)
         """
         # TODO: use the cached tanh output to compute the gradient
-        grad_x=1-(grad_out**2)
+        torch_of_1s=torch.ones_like(self.cache)
+        d_tanh=torch.sub(torch_of_1s, self.cache**2)
+        grad_x=d_tanh * grad_out
         return grad_x
         raise NotImplementedError("Tanh.backward")
 
@@ -242,7 +249,8 @@ class CrossEntropyLoss:
             5. Cache whatever you need for backward.
         """
         # TODO
-        stabilized_logits=logits-logits.max(dim=1, keepdim=True)
+        max_tensor=torch.max(logits, dim=1, keepdim=True).values #find the max value for each row and keep the dimensions for broadcasting
+        stabilized_logits=torch.sub(logits,max_tensor)
         softmax= torch.exp(stabilized_logits) / torch.exp(stabilized_logits).sum(dim=1, keepdim=True)
         one_hot= torch.zeros_like(softmax) #assigning 0 to initialize a one_hot tensor sized as softmax
         for i in range(softmax.shape[0]): #for the batch size
@@ -250,9 +258,9 @@ class CrossEntropyLoss:
             one_hot[i][index]=1 #assign 1 to that index in the one_hot tensor, 0 is assigned for the other indices in the initialization 
 #this way we create a tensor that has the value 1 in the correct label and 0 otherwise
 #when we multiply it with the softmax tensor, the 0's will cancel the unrelated probabilities
-
-        negative_log=-(torch.log(softmax)*one_hot).sum(dim=1) 
-        NLL=negative_log/logits.shape[0]
+        true_prob=(softmax * one_hot) 
+        negative_log=torch.neg(torch.log(true_prob.sum(dim=1))) #we sum over the classes to get the probability of the true class for each sample, then we take the log and negate it to get the negative log-likelihood
+        NLL=negative_log.mean() 
         self.cache=(softmax, one_hot) 
         return NLL
         raise NotImplementedError("CrossEntropyLoss.forward")
@@ -272,7 +280,7 @@ class CrossEntropyLoss:
         #self.cache[0] is the softmax tensor
         #self.cache[1] is the one_hot tensor
         #branch size is the first dim of the softmax tensor which is self.cache[0].shape[0]
-        grad_logits=(self.cache[0]- self.cache[1])/self.cache[0].shape[0]
+        grad_logits=(self.cache[0]- self.cache[1]) / self.cache[0].shape[0]
         return grad_logits
         raise NotImplementedError("CrossEntropyLoss.backward")
 
