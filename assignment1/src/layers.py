@@ -121,7 +121,7 @@ class ReLU(Layer):
         """
         # TODO: apply ReLU and store the mask needed for backward in self.cache
         activate = torch.maximum(torch.zeros_like(x), x)
-        self.cache=x 
+        self.cache=x
         return activate
         raise NotImplementedError("ReLU.forward")
 
@@ -253,7 +253,7 @@ class CrossEntropyLoss:
         max_tensor=torch.max(logits, dim=1, keepdim=True).values 
         stabilized_logits=torch.sub(logits,max_tensor)
         softmax= torch.exp(stabilized_logits) / torch.exp(stabilized_logits).sum(dim=1, keepdim=True)
-
+        #burda log-sum-exp-norm mu uygulamamız gerekiyor
         one_hot= torch.zeros_like(softmax) #assigning 0 to initialize a one_hot tensor sized as softmax
         for i in range(softmax.shape[0]): #for the batch size
             index=labels[i] #check the value of the label index
