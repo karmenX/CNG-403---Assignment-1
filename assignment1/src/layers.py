@@ -121,7 +121,7 @@ class ReLU(Layer):
         """
         # TODO: apply ReLU and store the mask needed for backward in self.cache
         activate = torch.maximum(torch.zeros_like(x), x)
-        self.cache=x
+        self.cache=x>0
         return activate
         raise NotImplementedError("ReLU.forward")
 
@@ -134,13 +134,7 @@ class ReLU(Layer):
         """
         # TODO: gradient is 1 where x > 0, else 0
         #bad algorithm come back with a better one
-        grad_x = torch.zeros_like(self.cache)
-        for i in range(self.cache.shape[0]):
-            for j in range(self.cache.shape[1]):
-                if self.cache[i][j] > 0:
-                    grad_x[i][j] = grad_out[i][j]
-                else:
-                    grad_x[i][j] = 0
+        grad_x = grad_out * self.cache
         return grad_x
         
         raise NotImplementedError("ReLU.backward")
@@ -255,10 +249,7 @@ class CrossEntropyLoss:
         softmax= torch.exp(stabilized_logits) / torch.exp(stabilized_logits).sum(dim=1, keepdim=True)
         #burda log-sum-exp-norm mu uygulamamız gerekiyor
         one_hot= torch.zeros_like(softmax) #assigning 0 to initialize a one_hot tensor sized as softmax
-        for i in range(softmax.shape[0]): #for the batch size
-            index=labels[i] #check the value of the label index
-            one_hot[i][index]=1 #assign 1 to that index in the one_hot tensor, 0 is assigned for the other indices in the initialization 
-
+        one_hot[range(logits.shape[0]), labels] = 1
 #this way we create a tensor that has the value 1 in the correct label and 0 otherwise
 #when we multiply it with the softmax tensor, the 0's will cancel the unrelated probabilities
         true_prob=(softmax * one_hot) 
