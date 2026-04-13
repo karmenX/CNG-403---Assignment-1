@@ -247,7 +247,7 @@ class CrossEntropyLoss:
         max_tensor=torch.max(logits, dim=1, keepdim=True).values 
         stabilized_logits=torch.sub(logits,max_tensor)
         softmax= torch.exp(stabilized_logits) / torch.exp(stabilized_logits).sum(dim=1, keepdim=True)
-        #burda log-sum-exp-norm mu uygulamamız gerekiyor
+      
         one_hot= torch.zeros_like(softmax) #assigning 0 to initialize a one_hot tensor sized as softmax
         one_hot[range(logits.shape[0]), labels] = 1
 #this way we create a tensor that has the value 1 in the correct label and 0 otherwise
