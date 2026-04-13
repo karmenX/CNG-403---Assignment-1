@@ -153,7 +153,8 @@ class FFNN:
         # TODO: for each Linear layer, add 2 * l2_lambda * layer.W to layer.dW
         for i in range(len(self.linear_layers)):
             self.linear_layers[i].dW += 2 * l2_lambda * self.linear_layers[i].W
-        raise NotImplementedError("FFNN.l2_grad")
+        #raise NotImplementedError("FFNN.l2_grad")
+
 
 
 # ---------------------------------------------------------------------------
