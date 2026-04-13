@@ -86,7 +86,19 @@ class SGD(Optimizer):
         #
         # Remember: update parameters IN-PLACE (layer.W -= ..., not layer.W = ...)
         # to avoid breaking references held elsewhere.
-        raise NotImplementedError("SGD.step")
+        if self.momentum == 0.0:
+           for i in range(len(self.model.linear_layers)):
+               self.model.linear_layers[i].W -= self.lr * self.model.linear_layers[i].dW
+               self.model.linear_layers[i].b -= self.lr * self.model.linear_layers[i].db
+        else:
+            for i in range(len(self.model.linear_layers)):
+                self.velocity_W[i] = self.momentum * self.velocity_W[i] + self.model.linear_layers[i].dW
+                self.velocity_b[i] = self.momentum * self.velocity_b[i] + self.model.linear_layers[i].db
+                self.model.linear_layers[i].W -= self.lr * self.velocity_W[i]
+                self.model.linear_layers[i].b -= self.lr * self.velocity_b[i]
+
+
+        #raise NotImplementedError("SGD.step")
 
 
 # ---------------------------------------------------------------------------

@@ -62,10 +62,18 @@ class FFNN:
         # Hint: iterate over hidden_sizes, adding a Linear then an activation
         # for each hidden layer. Then add the final Linear output layer.
         self.layers = []
-        self.layers.append(Linear(input_dim, hidden_sizes[0])) #input layer
-        for i in range(hidden_sizes[1]!=num_classes):
+        for i in range(len(hidden_sizes)):
+            if(i==0): #if this is the first time executing the loop, start with input layer
+                self.layers.append(Linear(input_dim, hidden_sizes[i])) #input layer
+                self.layers.append(ACTIVATIONS[activation]()) #activation layer
+            else: #execute loop for len(hidden_sizes-1) which is the total numver of hidden layers
+                self.layers.append(Linear(hidden_sizes[i-1], hidden_sizes[i])) #hidden layer
+                self.layers.append(ACTIVATIONS[activation]()) #activation layer
+        self.layers.append(Linear(hidden_sizes[len(hidden_sizes)-1], num_classes)) #output layer
+      
+        
             
-        raise NotImplementedError("FFNN.__init__")
+        #raise NotImplementedError("FFNN.__init__")
 
     # ------------------------------------------------------------------
     # Trainable layers convenience property
@@ -90,6 +98,11 @@ class FFNN:
             logits:  (batch_size, num_classes)  — raw scores before softmax
         """
         # TODO: sequentially apply each layer in self.layers
+    #apply each layer trough a loop executing number of how many layers we have in self.layers
+        logits = x
+        for i in range(len(self.layers)):
+            logits = self.layers[i](logits)
+        return logits
         raise NotImplementedError("FFNN.forward")
 
     def __call__(self, x: torch.Tensor) -> torch.Tensor:
@@ -110,6 +123,15 @@ class FFNN:
             grad_loss: (batch_size, num_classes) — gradient from CrossEntropyLoss.backward()
         """
         # TODO: propagate grad_loss backwards through self.layers in reverse
+
+        #calls backward function for each layer, where the backward is defined in layers
+        #so we have the flexibility to call backward cuz each layer has a backward function and it returns to the upstream gradient of the previous layer.
+        #cross entropy loss 
+        i=len(self.layers)-1
+        while i>=0:
+            grad_loss = self.layers[i].backward(grad_loss) 
+            i-=1
+        return grad_loss
         raise NotImplementedError("FFNN.backward")
 
     # ------------------------------------------------------------------
@@ -129,6 +151,8 @@ class FFNN:
             l2_lambda (float): regularisation strength.
         """
         # TODO: for each Linear layer, add 2 * l2_lambda * layer.W to layer.dW
+        for i in range(len(self.linear_layers)):
+            self.linear_layers[i].dW += 2 * l2_lambda * self.linear_layers[i].W
         raise NotImplementedError("FFNN.l2_grad")
 
 

@@ -284,6 +284,11 @@ class CrossEntropyLoss:
         #self.cache[0] is the softmax tensor
         #self.cache[1] is the one_hot tensor
         #branch size is the first dim of the softmax tensor which is self.cache[0].shape[0]
+
+        #isnt the crossentropyloss the last layer of the neural network? why do we bother to return the grad_logits?
+        #couldn't we return 1 as the upstream gradient and let the backward function of the previous layer handle the rest?
+        #the grad_out will sequentially change from 1 to whatever results in the previous layers backward func.
+        #wouldn't it be more consistent 
         grad_logits=(self.cache[0]- self.cache[1]) / self.cache[0].shape[0]
         return grad_logits
         raise NotImplementedError("CrossEntropyLoss.backward")
